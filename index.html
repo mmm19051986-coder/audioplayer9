@@ -1,216 +1,238 @@
-<iframe
-style="border:none;width:100%;height:420px;background:transparent"
-allow="autoplay"
-srcdoc='<!doctype html>
+<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<title>Neon Audio Player Editor</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
+:root{
+--accent:#00ffe0;
+--bg:#0b0b14;
+--glass:rgba(20,20,40,.6);
+}
+*{box-sizing:border-box}
 body{
 margin:0;
-background:transparent;
 font-family:Inter,Arial;
-display:flex;
-justify-content:center;
-}
-
-#player{
-width:320px;
-background:rgba(15,15,30,.6);
-backdrop-filter:blur(14px);
-border-radius:18px;
-padding:14px;
+background:radial-gradient(circle at top,#14142a,#05050c);
 color:#fff;
-box-shadow:0 0 35px #00ffe066;
+height:100vh;
+display:grid;
+grid-template-columns:360px 1fr;
 }
 
-#cover{
+/* PANEL */
+#panel{
+padding:20px;
+background:rgba(0,0,0,.35);
+backdrop-filter:blur(14px);
+border-right:1px solid #222;
+box-shadow:0 0 40px #000;
+}
+
+h2{
+margin:0 0 14px;
+color:var(--accent);
+text-shadow:0 0 12px var(--accent);
+}
+
+label{
+display:block;
+font-size:12px;
+opacity:.8;
+margin-top:14px;
+}
+
+input,textarea,select{
+width:100%;
+margin-top:6px;
+padding:8px;
+background:#0e0e1a;
+border:1px solid #333;
+border-radius:8px;
+color:#fff;
+}
+
+textarea{resize:vertical}
+
+button{
+margin-top:16px;
+width:100%;
+padding:12px;
+border:none;
+border-radius:12px;
+font-weight:700;
+background:linear-gradient(90deg,var(--accent),#7f5cff);
+color:#000;
+cursor:pointer;
+box-shadow:0 0 20px var(--accent);
+}
+
+/* PREVIEW */
+#preview{
+display:flex;
+align-items:center;
+justify-content:center;
+background:transparent;
+}
+
+/* PLAYER */
+.player{
+width:320px;
+background:var(--glass);
+backdrop-filter:blur(16px);
+border-radius:18px;
+padding:16px;
+box-shadow:0 0 40px var(--accent);
+}
+
+.cover{
 height:160px;
 border-radius:12px;
 background:center/cover;
 margin-bottom:10px;
 }
 
-#title{font-size:14px;margin-bottom:6px;}
+.title{
+font-size:14px;
+margin-bottom:6px;
+}
 
-#progress{
+.bar{
 height:4px;
 background:#222;
 border-radius:2px;
 overflow:hidden;
 }
-#progress span{
+.bar span{
 display:block;
 height:100%;
-width:0;
-background:#00ffe0;
+width:40%;
+background:var(--accent);
 }
 
 .controls{
 display:flex;
 justify-content:space-between;
-align-items:center;
-margin-top:10px;
+margin-top:12px;
 }
-
 .controls button{
-width:42px;height:42px;
+width:44px;
+height:44px;
 border-radius:50%;
 border:none;
-background:#111;
-color:#00ffe0;
-font-size:16px;
-cursor:pointer;
-}
-
-#volume{
-width:80px;
-}
-
-#playlist{
-margin-top:10px;
-max-height:100px;
-overflow:auto;
-font-size:13px;
-}
-
-#playlist div{
-padding:6px;
-cursor:pointer;
-border-radius:6px;
-}
-#playlist div:hover{
-background:#00ffe022;
-}
-
-canvas{
-width:100%;
-height:40px;
-margin-top:10px;
-}
-
-.lang{
-text-align:right;
-font-size:12px;
-cursor:pointer;
-opacity:.7;
+background:#0e0e1a;
+color:var(--accent);
+font-size:18px;
+box-shadow:0 0 12px var(--accent);
 }
 </style>
 </head>
 
 <body>
 
-<div id="player">
-<div class="lang" onclick="toggleLang()">RU / EN</div>
+<!-- SETTINGS -->
+<div id="panel">
+<h2>🎧 Neon Player</h2>
 
-<div id="cover" style="background-image:url(https://picsum.photos/400/300)"></div>
-<div id="title">—</div>
+<label>Accent color</label>
+<input type="color" id="color" value="#00ffe0">
 
-<div id="progress"><span></span></div>
+<label>Language</label>
+<select id="lang">
+<option value="ru">Русский</option>
+<option value="en">English</option>
+</select>
 
+<label>Cover image URL</label>
+<input id="cover" placeholder="https://...jpg">
+
+<label>Tracks (title | url)</label>
+<textarea id="tracks" rows="6">
+Track One | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+Track Two | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3
+</textarea>
+
+<button onclick="generate()">✨ Получить iframe</button>
+
+<textarea id="output" rows="8" style="margin-top:14px;background:#050509;color:#0f0"></textarea>
+</div>
+
+<!-- PREVIEW -->
+<div id="preview"></div>
+
+<script>
+const previewBox=document.getElementById("preview");
+
+function updatePreview(){
+document.documentElement.style.setProperty("--accent",color.value);
+previewBox.innerHTML=`
+<div class="player">
+<div class="cover" style="background-image:url('${cover.value}')"></div>
+<div class="title">Preview track</div>
+<div class="bar"><span></span></div>
 <div class="controls">
+<button>⏮</button><button>▶</button><button>⏭</button><button>🔀</button>
+</div>
+</div>`;
+}
+
+["color","cover","lang","tracks"].forEach(id=>{
+document.getElementById(id).addEventListener("input",updatePreview);
+});
+updatePreview();
+
+function generate(){
+const list = tracks.value.split("\n").map(l=>{
+const p=l.split("|");
+return {title:p[0]?.trim(),url:p[1]?.trim()};
+}).filter(t=>t.url);
+
+output.value = `<iframe style="border:none;width:100%;height:420px;background:transparent"
+allow="autoplay"
+srcdoc='<!doctype html>
+<html lang="${lang.value}">
+<head>
+<meta charset="UTF-8">
+<style>
+body{margin:0;background:transparent;font-family:Inter,Arial;display:flex;justify-content:center}
+#p{width:320px;background:rgba(20,20,40,.6);backdrop-filter:blur(16px);
+border-radius:18px;padding:16px;color:#fff;
+box-shadow:0 0 40px ${color.value}}
+#c{height:160px;border-radius:12px;background:url("${cover.value}") center/cover}
+#b{height:4px;background:#222;margin:10px 0}
+#b span{display:block;height:100%;width:0;background:${color.value}}
+button{width:44px;height:44px;border-radius:50%;border:none;
+background:#0e0e1a;color:${color.value};font-size:18px}
+</style>
+</head>
+<body>
+<div id="p">
+<div id="c"></div>
+<div id="t">—</div>
+<div id="b"><span></span></div>
+<div style="display:flex;justify-content:space-between">
 <button onclick="prev()">⏮</button>
-<button onclick="toggle()">▶</button>
+<button onclick="play()">▶</button>
 <button onclick="next()">⏭</button>
 <button onclick="shuffle()">🔀</button>
 </div>
-
-<div class="controls">
-<input id="volume" type="range" min="0" max="1" step="0.01">
-<button onclick="mute()">🔇</button>
 </div>
-
-<canvas id="eq"></canvas>
-
-<div id="playlist"></div>
-</div>
-
 <script>
-/* ===== DATA ===== */
-const tracks=[
-{title:"Track One",url:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
-{title:"Track Two",url:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"},
-{title:"Track Three",url:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"}
-];
-
-let lang="ru";
-const i18n={
-ru:{mute:"Звук",play:"▶",pause:"⏸"},
-en:{mute:"Mute",play:"▶",pause:"⏸"}
-};
-
-/* ===== AUDIO ===== */
-let i=0;
-const audio=new Audio();
-audio.crossOrigin="anonymous";
-
-/* ===== EQ ===== */
-const ctx=new AudioContext();
-const src=ctx.createMediaElementSource(audio);
-const analyser=ctx.createAnalyser();
-src.connect(analyser);
-analyser.connect(ctx.destination);
-analyser.fftSize=64;
-
-const canvas=document.getElementById("eq");
-const c=canvas.getContext("2d");
-const data=new Uint8Array(analyser.frequencyBinCount);
-
-function drawEQ(){
-requestAnimationFrame(drawEQ);
-analyser.getByteFrequencyData(data);
-c.clearRect(0,0,canvas.width,canvas.height);
-data.forEach((v,x)=>{
-c.fillStyle="#00ffe0";
-c.fillRect(x*6,canvas.height,4,-v/2);
-});
-}
-drawEQ();
-
-/* ===== UI ===== */
-function load(){
-audio.src=tracks[i].url;
-title.textContent=tracks[i].title;
-}
-function toggle(){
-ctx.resume();
-audio.paused?audio.play():audio.pause();
-}
-function next(){i=(i+1)%tracks.length;load();audio.play();}
-function prev(){i=(i-1+tracks.length)%tracks.length;load();audio.play();}
-function shuffle(){i=Math.floor(Math.random()*tracks.length);load();audio.play();}
-function mute(){audio.muted=!audio.muted;}
-
-audio.ontimeupdate=()=>{
-progress.children[0].style.width=(audio.currentTime/audio.duration*100)+"%";
-};
-
-/* ===== VOLUME ===== */
-volume.oninput=e=>audio.volume=e.target.value;
-
-/* ===== PLAYLIST ===== */
-tracks.forEach((t,idx)=>{
-const d=document.createElement("div");
-d.textContent=t.title;
-d.onclick=()=>{i=idx;load();audio.play();}
-playlist.appendChild(d);
-});
-
-/* ===== LANG ===== */
-function toggleLang(){
-lang=lang==="ru"?"en":"ru";
-}
-
-/* ===== AUTO RESIZE ===== */
-const ro=new ResizeObserver(()=>{
-parent.postMessage({height:document.body.scrollHeight},"*");
-});
-ro.observe(document.body);
-
+const tracks=${JSON.stringify(list)};
+let i=0,a=new Audio();
+function load(){a.src=tracks[i].url;t.textContent=tracks[i].title}
+function play(){a.play()}
+function next(){i=(i+1)%tracks.length;load();play()}
+function prev(){i=(i-1+tracks.length)%tracks.length;load();play()}
+function shuffle(){i=Math.floor(Math.random()*tracks.length);load();play()}
+a.ontimeupdate=()=>b.children[0].style.width=(a.currentTime/a.duration*100)+'%';
 load();
+</script>
+</body>
+</html>'></iframe>`;
+}
 </script>
 
 </body>
-</html>'>
-</iframe>
+</html>
