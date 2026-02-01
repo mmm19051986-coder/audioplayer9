@@ -2,88 +2,243 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Genially Audio Player Builder</title>
-
+<title>Neon Audio Player Editor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: #fff;
-  display: flex;
-  height: 100vh;
+:root{
+--accent:#00ffe0;
+--glow:#00ffe0;
+--glass:rgba(20,20,40,.65);
 }
 
-#controls {
-  width: 320px;
-  padding: 15px;
-  box-sizing: border-box;
-  background: #1b1b1b;
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Inter,Arial;
+height:100vh;
+display:grid;
+grid-template-columns:360px 1fr;
+background:radial-gradient(circle at top,#14142a,#05050c);
+color:#fff;
 }
 
-label {
-  display: block;
-  margin-top: 10px;
-  font-size: 13px;
+/* PANEL */
+#panel{
+padding:20px;
+background:rgba(0,0,0,.35);
+backdrop-filter:blur(14px);
+border-right:1px solid #222;
+overflow:auto;
 }
 
-input, select, textarea, button {
-  width: 100%;
-  margin-top: 5px;
+h2{
+margin:0 0 12px;
+color:var(--accent);
+text-shadow:0 0 12px var(--glow);
 }
 
-button {
-  margin-top: 15px;
-  padding: 8px;
-  background: #4caf50;
-  border: none;
-  cursor: pointer;
+label{
+display:block;
+font-size:12px;
+opacity:.8;
+margin-top:14px;
 }
 
-#preview {
-  flex: 1;
-  background: transparent;
+input,textarea,select{
+width:100%;
+margin-top:6px;
+padding:8px;
+background:#0e0e1a;
+border:1px solid #333;
+border-radius:8px;
+color:#fff;
 }
 
-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
+textarea{resize:vertical}
+
+button{
+margin-top:16px;
+width:100%;
+padding:12px;
+border:none;
+border-radius:12px;
+font-weight:700;
+cursor:pointer;
+background:linear-gradient(90deg,var(--accent),#7f5cff);
+color:#000;
+box-shadow:0 0 20px var(--glow);
+}
+
+/* PREVIEW */
+#preview{
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+/* PLAYER PREVIEW */
+.player{
+width:320px;
+background:var(--glass);
+backdrop-filter:blur(16px);
+border-radius:18px;
+padding:16px;
+box-shadow:0 0 40px var(--glow);
+}
+
+.cover{
+height:160px;
+border-radius:12px;
+background:center/cover;
+margin-bottom:10px;
+}
+
+.title{font-size:14px;margin-bottom:6px;}
+
+.bar{
+height:4px;
+background:#222;
+border-radius:2px;
+overflow:hidden;
+}
+.bar span{
+display:block;
+height:100%;
+width:40%;
+background:var(--accent);
+}
+
+.controls{
+display:flex;
+justify-content:space-between;
+margin-top:12px;
+}
+.controls button{
+width:44px;height:44px;
+border-radius:50%;
+background:#0e0e1a;
+color:var(--accent);
+font-size:18px;
+box-shadow:0 0 12px var(--glow);
+border:none;
 }
 </style>
 </head>
 
 <body>
 
-<div id="controls">
-  <h3>🎧 Audio Player</h3>
+<!-- PANEL -->
+<div id="panel">
+<h2>🎧 Neon Player</h2>
 
-  <label>Язык</label>
-  <select id="lang">
-    <option value="ru">Русский</option>
-    <option value="en">English</option>
-  </select>
+<label>Accent color</label>
+<input type="color" id="color" value="#00ffe0">
 
-  <label>Основной цвет</label>
-  <input type="color" id="color" value="#7CFC00">
+<label>Language</label>
+<select id="lang">
+<option value="ru">Русский</option>
+<option value="en">English</option>
+</select>
 
-  <label>Картинка (URL)</label>
-  <input type="text" id="cover" placeholder="https://...jpg">
+<label>Cover image URL</label>
+<input id="cover" placeholder="https://...jpg">
 
-  <label>GitHub папка с аудио</label>
-  <input type="text" id="repo"
-   placeholder="https://github.com/user/repo/tree/main/audio">
+<label>Tracks (title | url)</label>
+<textarea id="tracks" rows="6">
+Track One | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+Track Two | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3
+</textarea>
 
-  <button onclick="update()">🔄 Обновить предпросмотр</button>
-  <button onclick="generate()">📋 Получить код</button>
+<button onclick="generate()">📦 Сгенерировать iframe</button>
 
-  <textarea id="output" rows="10"></textarea>
+<textarea id="output" rows="8"
+style="margin-top:12px;background:#050509;color:#0f0"></textarea>
 </div>
 
-<div id="preview">
-  <iframe id="frame"></iframe>
-</div>
+<!-- PREVIEW -->
+<div id="preview"></div>
 
-<script src="builder.js"></script>
+<script>
+const previewBox = document.getElementById("preview");
+
+function updatePreview(){
+document.documentElement.style.setProperty('--accent',color.value);
+document.documentElement.style.setProperty('--glow',color.value);
+
+previewBox.innerHTML = `
+<div class="player">
+<div class="cover" style="background-image:url('${cover.value}')"></div>
+<div class="title">Preview track</div>
+<div class="bar"><span></span></div>
+<div class="controls">
+<button>⏮</button>
+<button>▶</button>
+<button>⏭</button>
+<button>🔀</button>
+</div>
+</div>`;
+}
+
+["color","cover","tracks","lang"].forEach(id=>{
+document.getElementById(id).addEventListener("input",updatePreview);
+});
+updatePreview();
+
+/* ===== CODE GENERATION ===== */
+function generate(){
+const list = tracks.value.split("\n").map(l=>{
+const p=l.split("|");
+return {title:(p[0]||"").trim(),url:(p[1]||"").trim()};
+}).filter(t=>t.url);
+
+const iframe = `<iframe style="border:none;width:100%;height:420px;background:transparent"
+allow="autoplay"
+srcdoc='<!doctype html>
+<html lang="${lang.value}">
+<head>
+<meta charset="UTF-8">
+<style>
+body{margin:0;background:transparent;font-family:Inter,Arial;display:flex;justify-content:center}
+#p{width:320px;background:rgba(20,20,40,.65);backdrop-filter:blur(16px);
+border-radius:18px;padding:16px;color:#fff;
+box-shadow:0 0 40px ${color.value}}
+#c{height:160px;border-radius:12px;background:url("${cover.value}") center/cover}
+#b{height:4px;background:#222;margin:10px 0}
+#b span{display:block;height:100%;width:0;background:${color.value}}
+button{width:44px;height:44px;border-radius:50%;border:none;
+background:#0e0e1a;color:${color.value};font-size:18px}
+</style>
+</head>
+<body>
+<div id="p">
+<div id="c"></div>
+<div id="t">—</div>
+<div id="b"><span></span></div>
+<div style="display:flex;justify-content:space-between">
+<button onclick="prev()">⏮</button>
+<button onclick="play()">▶</button>
+<button onclick="next()">⏭</button>
+<button onclick="shuffle()">🔀</button>
+</div>
+</div>
+<script>
+const tracks=${JSON.stringify(list)};
+let i=0;
+const a=new Audio();
+function load(){a.src=tracks[i].url;t.textContent=tracks[i].title}
+function play(){a.play()}
+function next(){i=(i+1)%tracks.length;load();play()}
+function prev(){i=(i-1+tracks.length)%tracks.length;load();play()}
+function shuffle(){i=Math.floor(Math.random()*tracks.length);load();play()}
+a.ontimeupdate=()=>b.children[0].style.width=(a.currentTime/a.duration*100)+"%";
+load();
+</script>
+</body>
+</html>'></iframe>`;
+
+output.value = iframe;
+}
+</script>
+
 </body>
 </html>
