@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Genially Audio Player Editor</title>
+<style>
+body {
+  margin: 0;
+  font-family: Inter, Arial;
+  background: #0b0b14;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  height: 100vh;
+}
+
+/* PANEL */
+#controls {
+  padding: 20px;
+  border-right: 1px solid #222;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  font-size: 13px;
+  opacity: .8;
+}
+
+input, select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+button {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(90deg,#00ffe0,#7f5cff);
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* PREVIEW */
+#preview {
+  position: relative;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* PLAYER */
+.player {
+  width: 320px;
+  backdrop-filter: blur(12px);
+  background: rgba(15,15,30,.55);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 0 25px #00ffe055;
+}
+
+.cover {
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 30px #000;
+}
+
+.track {
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.progress {
+  height: 4px;
+  background: #222;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: #00ffe0;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.controls button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="controls">
+  <h3>🎧 Audio Player</h3>
+
+  <label>GitHub RAW folder URL</label>
+  <input id="repo" placeholder="https://raw.githubusercontent.com/.../audio/">
+
+  <label>Cover image URL</label>
+  <input id="cover" placeholder="https://...jpg">
+
+  <label>Accent color</label>
+  <input id="color" type="color" value="#00ffe0">
+
+  <label>Language</label>
+  <select id="lang">
+    <option value="ru">Русский</option>
+    <option value="en">English</option>
+  </select>
+
+  <button onclick="generate()">Получить код</button>
+
+  <textarea id="output" style="margin-top:12px;height:160px;width:100%;background:#050509;color:#0f0"></textarea>
+</div>
+
+<div id="preview"></div>
+
+<script>
+let audio = new Audio();
+let tracks = [];
+let index = 0;
+
+function loadPreview() {
+  document.getElementById("preview").innerHTML = `
+  <div class="player" style="--accent:${color.value}">
+    <div class="cover" style="background-image:url('${cover.value}')"></div>
+    <div class="track">Track preview</div>
+    <div class="progress"><span></span></div>
+    <div class="controls">
+      <button>⏮</button>
+      <button>▶</button>
+      <button>⏭</button>
+    </div>
+  </div>`;
+}
+
+["repo","cover","color"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",loadPreview)
+});
+
+loadPreview();
+
+function generate() {
+document.getElementById("output").value = `
+<div id="AUDIO_WIDGET">
+<style>
+#audioPlayer{
+width:320px;
+background:rgba(10,10,20,.55);
+backdrop-filter:blur(14px);
+border-radius:18px;
+padding:16px;
+color:white;
+font-family:Inter,Arial;
+}
+#audioPlayer .cover{
+height:160px;
+border-radius:12px;
+background:url('${cover.value}') center/cover;
+}
+#audioPlayer .bar{
+height:4px;
+background:#222;
+margin:10px 0;
+}
+#audioPlayer .bar span{
+display:block;
+height:100%;
+background:${color.value};
+width:0%;
+}
+</style>
+
+<div id="audioPlayer">
+<div class="cover"></div>
+<div id="track">Loading...</div>
+<div class="bar"><span></span></div>
+<button onclick="p()">▶</button>
+<button onclick="n()">⏭</button>
+</div>
+
+<script>
+let list = [];
+let i=0;
+let a=new Audio();
+
+fetch('${repo.value}')
+.then(()=>list=[ '${repo.value}track1.mp3' ]);
+
+function p(){a.src=list[i];a.play();}
+function n(){i=(i+1)%list.length;p();}
+
+a.ontimeupdate=()=> {
+document.querySelector('#audioPlayer span').style.width=
+(a.currentTime/a.duration*100)+'%';
+};
+</script>
+</div>
+`;
+}
+</script>
+
+</body>
+</html>
